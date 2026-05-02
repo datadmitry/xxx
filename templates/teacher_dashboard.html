@@ -10,8 +10,8 @@
         <div class="col-md-4 mb-3">
             <div class="card">
                 <div class="card-body text-center">
-                    <h5 class="card-title"> Создать тест</h5>
-                    <p class="card-text">Создание нового теста с выбором класса</p>
+                    <h5 class="card-title">Создать тест</h5>
+                    <p class="card-text">Добавьте новый тест в общую базу тестов</p>
                     <a href="{{ url_for('create_test') }}" class="btn btn-primary">Создать</a>
                 </div>
             </div>
@@ -20,7 +20,17 @@
         <div class="col-md-4 mb-3">
             <div class="card">
                 <div class="card-body text-center">
-                    <h5 class="card-title"> Создать класс</h5>
+                    <h5 class="card-title">Загрузить тест</h5>
+                    <p class="card-text">Отправьте ученикам уже созданный тест или тест из базы</p>
+                    <a href="{{ url_for('test_bank') }}" class="btn btn-secondary-b">Загрузить</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Создать класс</h5>
                     <p class="card-text">Создайте класс для учеников</p>
                     <a href="{{ url_for('create_class') }}" class="btn btn-success">Создать</a>
                 </div>
@@ -30,9 +40,9 @@
         <div class="col-md-4 mb-3">
             <div class="card">
                 <div class="card-body text-center">
-                    <h5 class="card-title"> Мои классы</h5>
+                    <h5 class="card-title">Мои классы</h5>
                     <p class="card-text">Просмотр и статистика классов</p>
-                    <a href="{{ url_for('my_classes') }}" class="btn btn-info">Просмотреть</a>
+                    <a href="{{ url_for('my_classes') }}" class="btn btn-secondary-a">Просмотреть</a>
                 </div>
             </div>
         </div>
@@ -40,7 +50,7 @@
         <div class="col-md-4 mb-3">
             <div class="card">
                 <div class="card-body text-center">
-                    <h5 class="card-title"> Результаты учеников</h5>
+                    <h5 class="card-title">Результаты учеников</h5>
                     <p class="card-text">Просмотр результатов тестов</p>
                     <a href="{{ url_for('teacher_results') }}" class="btn btn-warning">Просмотреть</a>
                 </div>

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Загрузить тест{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-center mb-4">Загрузить тест ученикам</h1>
+
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Отправить тест в класс</h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">
+                        Выберите тест из общей базы или из ваших ранее созданных
+                        и отправьте его конкретному классу.
+                    </p>
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+
+                        <div class="mb-3">
+                            {{ form.test_id.label(class="form-label") }}
+                            {{ form.test_id(class="form-control") }}
+                            {% for error in form.test_id.errors %}
+                                <div class="alert alert-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.class_id.label(class="form-label") }}
+                            {{ form.class_id(class="form-control") }}
+                            {% for error in form.class_id.errors %}
+                                <div class="alert alert-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="text-center mb-3">База тестов</h2>
+    {% if bank_tests %}
+        <div class="row mb-5">
+            {% for test in bank_tests %}
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ test.title }}</h5>
+                            <p class="card-text">
+                                Вопросов: <strong>{{ test.questions|length }}</strong>
+                            </p>
+                            <span class="badge-pill-bank">из базы</span>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center">База тестов пока пуста.</div>
+    {% endif %}
+
+    <h2 class="text-center mb-3">Мои отправленные тесты</h2>
+    {% if own_tests %}
+        <div class="row">
+            {% for test in own_tests %}
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ test.title }}</h5>
+                            <p class="card-text">
+                                Вопросов: <strong>{{ test.questions|length }}</strong><br>
+                                Класс:
+                                <strong>
+                                    {% if test.class_ref %}{{ test.class_ref.name }}{% else %}—{% endif %}
+                                </strong>
+                            </p>
+                            <span class="badge-pill-own">отправлен</span>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center">
+            Вы ещё не отправляли тесты ученикам.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

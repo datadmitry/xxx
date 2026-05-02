@@ -49,11 +49,20 @@ class QuestionForm(FlaskForm):
 class CreateTestForm(FlaskForm):
     test_title = StringField('Название теста', validators=[DataRequired()])
     num_questions = IntegerField('Количество вопросов', validators=[DataRequired(), NumberRange(min=1, max=50)])
-    class_id = SelectField('Для какого класса', coerce=int, validators=[DataRequired()])
     submit = SubmitField('Далее')
 
+
+class SendTestForm(FlaskForm):
+    test_id = SelectField('Тест', coerce=int, validators=[DataRequired()])
+    class_id = SelectField('Класс', coerce=int, validators=[DataRequired()])
+    submit = SubmitField('Отправить ученикам')
+
     def __init__(self, teacher_id, *args, **kwargs):
-        super(CreateTestForm, self).__init__(*args, **kwargs)
-        from models import Class
+        super(SendTestForm, self).__init__(*args, **kwargs)
+        from models import Class, Test
         classes = Class.query.filter_by(teacher_id=teacher_id).all()
         self.class_id.choices = [(c.id, c.name) for c in classes]
+        bank_tests = Test.query.filter(
+            (Test.class_id.is_(None)) | (Test.created_by == teacher_id)
+        ).all()
+        self.test_id.choices = [(t.id, t.title) for t in bank_tests]

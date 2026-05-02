@@ -1,7 +1,7 @@
 from flask import Flask, render_template, redirect, url_for, flash, request, session
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from models import db, User, Test, Question, TestResult, StudentAnswer, Class
-from forms import RegistrationForm, LoginForm, CreateTestForm, QuestionForm
+from forms import RegistrationForm, LoginForm, CreateTestForm, QuestionForm, SendTestForm
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import os
@@ -22,8 +22,92 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
+def seed_test_bank():
+    if Test.query.filter(Test.class_id.is_(None)).count() > 0:
+        return
+
+    seed_user = User.query.filter_by(username='system').first()
+    if not seed_user:
+        seed_user = User(
+            username='system',
+            password=generate_password_hash('system_seed_password'),
+            role='teacher',
+            level=1,
+            teacher_code='SYSTEM'
+        )
+        db.session.add(seed_user)
+        db.session.commit()
+
+    bank = [
+        {
+            'title': 'Математика: базовая арифметика',
+            'questions': [
+                ('Сколько будет 7 + 8?', '15'),
+                ('Сколько будет 12 * 3?', '36'),
+                ('Сколько будет 81 / 9?', '9'),
+                ('Сколько будет 25 - 14?', '11'),
+                ('Сколько будет 6 * 7?', '42'),
+            ],
+        },
+        {
+            'title': 'Русский язык: проверь себя',
+            'questions': [
+                ('Сколько падежей в русском языке?', '6'),
+                ('Какая часть речи отвечает на вопрос "что делать"?', 'глагол'),
+                ('Сколько букв в русском алфавите?', '33'),
+                ('Антоним к слову "горячий"', 'холодный'),
+                ('Синоним к слову "красивый"', 'прекрасный'),
+            ],
+        },
+        {
+            'title': 'Окружающий мир: природа',
+            'questions': [
+                ('Какая планета третья от Солнца?', 'Земля'),
+                ('Самый большой океан', 'Тихий'),
+                ('Сколько материков на Земле?', '6'),
+                ('Самое высокое животное на суше', 'жираф'),
+                ('Какой газ нужен для дыхания?', 'кислород'),
+            ],
+        },
+        {
+            'title': 'История: Древний мир',
+            'questions': [
+                ('В какой стране были построены пирамиды Гизы?', 'Египет'),
+                ('Кто основал Древний Рим (по легенде)?', 'Ромул'),
+                ('Какой материал использовали для письма в Древнем Египте?', 'папирус'),
+                ('Бог-громовержец у древних греков', 'Зевс'),
+                ('Главная река Древнего Египта', 'Нил'),
+            ],
+        },
+        {
+            'title': 'Английский язык: начальный уровень',
+            'questions': [
+                ('Перевод слова "cat"', 'кот'),
+                ('Перевод слова "house"', 'дом'),
+                ('Как по-английски "красный"?', 'red'),
+                ('Как по-английски "книга"?', 'book'),
+                ('Множественное число от "child"', 'children'),
+            ],
+        },
+    ]
+
+    for t in bank:
+        test = Test(title=t['title'], created_by=seed_user.id, class_id=None)
+        db.session.add(test)
+        db.session.flush()
+        for text, answer in t['questions']:
+            db.session.add(Question(
+                text=text,
+                correct_answer=answer,
+                img='NO',
+                test_id=test.id,
+            ))
+    db.session.commit()
+
+
 with app.app_context():
     db.create_all()
+    seed_test_bank()
 
 
 def calculate_grade(percentage):
@@ -106,7 +190,18 @@ def student_dashboard():
     if current_user.role != 'student':
         return redirect(url_for('teacher_dashboard'))
 
-    tests = Test.query.all()
+    student_class = None
+    if current_user.class_level and current_user.class_letter:
+        student_class = Class.query.filter_by(
+            level=current_user.class_level,
+            letter=current_user.class_letter,
+        ).first()
+
+    if student_class:
+        tests = Test.query.filter_by(class_id=student_class.id).all()
+    else:
+        tests = []
+
     completed_tests = TestResult.query.filter_by(student_id=current_user.id).all()
     completed_test_ids = [result.test_id for result in completed_tests]
 
@@ -441,22 +536,83 @@ def create_test():
     if current_user.role != 'teacher':
         return redirect(url_for('student_dashboard'))
 
+    form = CreateTestForm()
+
+    if form.validate_on_submit():
+        session['test_title'] = form.test_title.data
+        session['num_questions'] = form.num_questions.data
+        session['class_id'] = None
+        session['questions_data'] = []
+        return redirect(url_for('add_questions', q_num=1))
+
+    return render_template('create_test.html', form=form)
+
+
+@app.route('/test_bank', methods=['GET', 'POST'])
+@login_required
+def test_bank():
+    if current_user.role != 'teacher':
+        return redirect(url_for('student_dashboard'))
+
     teacher_classes = Class.query.filter_by(teacher_id=current_user.id).all()
 
     if not teacher_classes:
         flash('Сначала создайте класс в разделе "Создать класс"', 'warning')
         return redirect(url_for('teacher_dashboard'))
 
-    form = CreateTestForm(teacher_id=current_user.id)
+    form = SendTestForm(teacher_id=current_user.id)
 
     if form.validate_on_submit():
-        session['test_title'] = form.test_title.data
-        session['num_questions'] = form.num_questions.data
-        session['class_id'] = form.class_id.data
-        session['questions_data'] = []
-        return redirect(url_for('add_questions', q_num=1))
+        source_test = Test.query.get_or_404(form.test_id.data)
+        target_class = Class.query.get_or_404(form.class_id.data)
 
-    return render_template('create_test.html', form=form, classes=teacher_classes)
+        if target_class.teacher_id != current_user.id:
+            flash('У вас нет доступа к этому классу', 'danger')
+            return redirect(url_for('test_bank'))
+
+        already = Test.query.filter_by(
+            title=source_test.title,
+            class_id=target_class.id,
+            created_by=current_user.id,
+        ).first()
+        if already:
+            flash(f'Тест "{source_test.title}" уже отправлен в класс {target_class.name}', 'warning')
+            return redirect(url_for('test_bank'))
+
+        new_test = Test(
+            title=source_test.title,
+            created_by=current_user.id,
+            class_id=target_class.id,
+        )
+        db.session.add(new_test)
+        db.session.flush()
+
+        for q in source_test.questions:
+            db.session.add(Question(
+                text=q.text,
+                correct_answer=q.correct_answer,
+                img=q.img,
+                points=q.points,
+                test_id=new_test.id,
+            ))
+        db.session.commit()
+
+        flash(f'Тест "{source_test.title}" отправлен в класс {target_class.name}', 'success')
+        return redirect(url_for('test_bank'))
+
+    bank_tests = Test.query.filter(Test.class_id.is_(None)).all()
+    own_tests = Test.query.filter(
+        Test.created_by == current_user.id,
+        Test.class_id.isnot(None),
+    ).all()
+
+    return render_template(
+        'test_bank.html',
+        form=form,
+        bank_tests=bank_tests,
+        own_tests=own_tests,
+        classes=teacher_classes,
+    )
 
 
 if __name__ == '__main__':
