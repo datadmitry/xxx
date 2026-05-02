@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Предпросмотр: {{ test.title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
+        <h1 class="mb-0">{{ test.title }}</h1>
+        <div class="d-flex gap-2">
+            {% if test.class_id %}
+                <span class="badge-pill-own">отправлен{% if test.class_ref %} · {{ test.class_ref.name }}{% endif %}</span>
+            {% else %}
+                <span class="badge-pill-bank">из базы</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <p class="text-muted mb-4">
+        Вопросов: <strong>{{ test.questions|length }}</strong>.
+        Это режим предпросмотра — ученикам правильные ответы не показываются.
+    </p>
+
+    {% if test.questions %}
+        {% for question in test.questions %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Вопрос {{ loop.index }}</h5>
+                    <p class="card-text">{{ question.text }}</p>
+                    {% if question.img and question.img != 'NO' %}
+                        <img src="{{ url_for('static', filename='img/' + question.img) }}"
+                             style="width: 480px; max-width: 100%; height: auto; border-radius: 14px;" alt="">
+                    {% endif %}
+                    <div class="preview-answer mt-3">
+                        <span class="answer-label">Правильный ответ:</span>
+                        <span class="answer-value">{{ question.correct_answer }}</span>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-info text-center">В этом тесте пока нет вопросов.</div>
+    {% endif %}
+
+    <div class="text-center mt-4 mb-5 d-flex justify-content-center gap-2 flex-wrap">
+        <a href="{{ url_for('test_bank') }}" class="btn btn-secondary">Назад к базе</a>
+        <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-primary">К панели учителя</a>
+    </div>
+</div>
+{% endblock %}

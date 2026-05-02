@@ -51,12 +51,16 @@
             {% for test in bank_tests %}
                 <div class="col-md-4 mb-3">
                     <div class="card h-100">
-                        <div class="card-body">
+                        <div class="card-body d-flex flex-column">
                             <h5 class="card-title">{{ test.title }}</h5>
                             <p class="card-text">
                                 Вопросов: <strong>{{ test.questions|length }}</strong>
                             </p>
-                            <span class="badge-pill-bank">из базы</span>
+                            <div class="mt-auto d-flex justify-content-between align-items-center">
+                                <span class="badge-pill-bank">из базы</span>
+                                <a href="{{ url_for('test_preview', test_id=test.id) }}"
+                                   class="btn btn-secondary-a btn-sm">Предпросмотр</a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -72,7 +76,7 @@
             {% for test in own_tests %}
                 <div class="col-md-4 mb-3">
                     <div class="card h-100">
-                        <div class="card-body">
+                        <div class="card-body d-flex flex-column">
                             <h5 class="card-title">{{ test.title }}</h5>
                             <p class="card-text">
                                 Вопросов: <strong>{{ test.questions|length }}</strong><br>
@@ -81,7 +85,11 @@
                                     {% if test.class_ref %}{{ test.class_ref.name }}{% else %}—{% endif %}
                                 </strong>
                             </p>
-                            <span class="badge-pill-own">отправлен</span>
+                            <div class="mt-auto d-flex justify-content-between align-items-center">
+                                <span class="badge-pill-own">отправлен</span>
+                                <a href="{{ url_for('test_preview', test_id=test.id) }}"
+                                   class="btn btn-secondary-a btn-sm">Предпросмотр</a>
+                            </div>
                         </div>
                     </div>
                 </div>

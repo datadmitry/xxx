@@ -10,7 +10,7 @@
                 <p class="display-4">{{ "%.1f"|format(result.score) }}%</p>
                 <h4>Оценка: {{ result.grade }}</h4>
                 <p class="mt-3 mb-0">
-                    ⏱ Время прохождения:
+                    Время прохождения:
                     <strong>{{ format_duration(result.duration_seconds) }}</strong>
                 </p>
 
@@ -48,9 +48,9 @@
                     {% endif %}
                     <div>
                         {% if answer.is_correct %}
-                            <span class="badge bg-success">✓ Правильно</span>
+                            <span class="badge bg-success">Правильно</span>
                         {% else %}
-                            <span class="badge bg-danger">✗ Неправильно</span>
+                            <span class="badge bg-danger">Неправильно</span>
                         {% endif %}
                     </div>
                 </div>

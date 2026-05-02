@@ -5,7 +5,7 @@ from forms import RegistrationForm, LoginForm, CreateTestForm, QuestionForm, Sen
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime, date, timedelta
-from sqlalchemy import inspect, text
+from sqlalchemy import inspect, text, func
 import random
 import os
 
@@ -234,13 +234,8 @@ def student_dashboard():
             letter=current_user.class_letter,
         ).first()
 
-    query = (request.args.get('q') or '').strip()
-
     if student_class:
-        base_q = Test.query.filter_by(class_id=student_class.id)
-        if query:
-            base_q = base_q.filter(Test.title.ilike(f'%{query}%'))
-        tests = base_q.all()
+        tests = Test.query.filter_by(class_id=student_class.id).all()
     else:
         tests = []
 
@@ -254,7 +249,6 @@ def student_dashboard():
                            tests=tests,
                            completed_test_ids=completed_test_ids,
                            level=current_user.level,
-                           query=query,
                            streak=current_user.daily_streak or 0,
                            daily_done_today=daily_done_today)
 
@@ -269,12 +263,13 @@ def teacher_dashboard():
     search_results = []
     if query:
         teacher_class_ids = [c.id for c in Class.query.filter_by(teacher_id=current_user.id).all()]
-        search_results = Test.query.filter(
-            Test.title.ilike(f'%{query}%'),
+        candidates = Test.query.filter(
             (Test.class_id.is_(None)) |
             (Test.created_by == current_user.id) |
             (Test.class_id.in_(teacher_class_ids))
         ).all()
+        needle = query.casefold()
+        search_results = [t for t in candidates if needle in (t.title or '').casefold()]
 
     return render_template('teacher_dashboard.html',
                            query=query,
@@ -689,6 +684,56 @@ def test_bank():
         own_tests=own_tests,
         classes=teacher_classes,
     )
+
+
+@app.route('/my_results')
+@login_required
+def my_results():
+    if current_user.role != 'student':
+        return redirect(url_for('teacher_dashboard'))
+
+    results = (
+        TestResult.query
+        .filter_by(student_id=current_user.id)
+        .order_by(TestResult.completed_at.desc())
+        .all()
+    )
+
+    total = len(results)
+    if total:
+        avg_score = sum(r.score for r in results) / total
+        avg_grade = sum(r.grade for r in results) / total
+        best_score = max(r.score for r in results)
+        total_time = sum((r.duration_seconds or 0) for r in results)
+        passed = sum(1 for r in results if r.grade >= 3)
+    else:
+        avg_score = avg_grade = best_score = total_time = passed = 0
+
+    stats = {
+        'total': total,
+        'avg_score': avg_score,
+        'avg_grade': avg_grade,
+        'best_score': best_score,
+        'total_time': total_time,
+        'passed': passed,
+    }
+
+    return render_template('my_results.html', results=results, stats=stats)
+
+
+@app.route('/test_preview/<int:test_id>')
+@login_required
+def test_preview(test_id):
+    if current_user.role != 'teacher':
+        return redirect(url_for('student_dashboard'))
+
+    test = Test.query.get_or_404(test_id)
+
+    if test.class_id is not None and test.created_by != current_user.id:
+        flash('У вас нет доступа к этому тесту', 'danger')
+        return redirect(url_for('test_bank'))
+
+    return render_template('test_preview.html', test=test)
 
 
 DAILY_QUIZ_POOL = [

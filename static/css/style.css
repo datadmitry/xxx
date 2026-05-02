@@ -555,6 +555,11 @@ hr {
     display: inline-block;
 }
 
+.streak-fire.streak-fire-static {
+    animation: none;
+    transform: none;
+}
+
 @keyframes flameFlicker {
     0%, 100% { transform: scale(1) rotate(-2deg); }
     50%      { transform: scale(1.15) rotate(2deg); }

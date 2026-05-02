@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Мои результаты{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-center mb-4">Мои результаты</h1>
+
+    {% if stats.total %}
+        <div class="row mb-4">
+            <div class="col-md-3 col-6 mb-3">
+                <div class="stat-card text-center">
+                    <h3 class="mb-2">{{ stats.total }}</h3>
+                    <div class="text-muted">Тестов пройдено</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-3">
+                <div class="stat-card text-center">
+                    <h3 class="mb-2">{{ "%.1f"|format(stats.avg_score) }}%</h3>
+                    <div class="text-muted">Средний балл</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-3">
+                <div class="stat-card text-center">
+                    <h3 class="mb-2">{{ "%.1f"|format(stats.best_score) }}%</h3>
+                    <div class="text-muted">Лучший результат</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-3">
+                <div class="stat-card text-center">
+                    <h3 class="mb-2">{{ format_duration(stats.total_time) }}</h3>
+                    <div class="text-muted">Всего времени</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>История прохождений</h3>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Тест</th>
+                                <th>Балл</th>
+                                <th>Оценка</th>
+                                <th>Время</th>
+                                <th>Дата</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in results %}
+                                <tr>
+                                    <td>{{ r.test.title }}</td>
+                                    <td>{{ "%.1f"|format(r.score) }}%</td>
+                                    <td>
+                                        <span class="badge bg-{% if r.grade >= 4 %}success{% elif r.grade >= 3 %}warning{% else %}danger{% endif %}">
+                                            {{ r.grade }}
+                                        </span>
+                                    </td>
+                                    <td>{{ format_duration(r.duration_seconds) }}</td>
+                                    <td>{{ r.completed_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('test_result', result_id=r.id) }}"
+                                           class="btn btn-secondary-b btn-sm">Подробнее</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center">
+            <h3>Пока нет пройденных тестов</h3>
+            <p class="mb-0">Решите хотя бы один тест, чтобы увидеть свою статистику.</p>
+        </div>
+    {% endif %}
+
+    <div class="text-center mt-3 mb-5">
+        <a href="{{ url_for('student_dashboard') }}" class="btn btn-secondary">Назад</a>
+    </div>
+</div>
+{% endblock %}

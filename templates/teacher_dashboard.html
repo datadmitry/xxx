@@ -10,7 +10,7 @@
         <div class="col-md-8 mx-auto">
             <form method="GET" class="search-bar">
                 <input type="text" name="q" class="form-control"
-                       placeholder="🔍 Умный поиск тестов и курсов…"
+                       placeholder="Умный поиск тестов и курсов…"
                        value="{{ query or '' }}">
                 <button type="submit" class="btn btn-primary">Найти</button>
                 {% if query %}
@@ -31,18 +31,22 @@
                         {% if search_results %}
                             <ul class="list-group">
                                 {% for t in search_results %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
                                         <span>
                                             <strong>{{ t.title }}</strong>
                                             <small class="text-muted">
                                                 · вопросов: {{ t.questions|length }}
                                             </small>
                                         </span>
-                                        {% if t.class_id %}
-                                            <span class="badge-pill-own">отправлен</span>
-                                        {% else %}
-                                            <span class="badge-pill-bank">из базы</span>
-                                        {% endif %}
+                                        <span class="d-flex align-items-center gap-2">
+                                            {% if t.class_id %}
+                                                <span class="badge-pill-own">отправлен</span>
+                                            {% else %}
+                                                <span class="badge-pill-bank">из базы</span>
+                                            {% endif %}
+                                            <a href="{{ url_for('test_preview', test_id=t.id) }}"
+                                               class="btn btn-secondary-a btn-sm">Предпросмотр</a>
+                                        </span>
                                     </li>
                                 {% endfor %}
                             </ul>
