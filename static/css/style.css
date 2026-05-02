@@ -1,0 +1,230 @@
+body {
+    font-family: 'Inter', 'Roboto', 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #e0e0e0;
+}
+
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Merriweather', 'Georgia', serif;
+    color: #48bb78;
+    font-weight: 700; /* Жирный для заголовков */
+}
+
+
+h1 {
+    font-weight: 900; /* Самый жирный */
+    letter-spacing: -0.5px; /* Чуть уменьшить расстояние между буквами */
+}
+
+h2, h3 {
+    font-weight: 700;
+}
+
+
+.card-header {
+    font-family: 'Merriweather', 'Georgia', serif;
+    font-weight: 700;
+    font-size: 1.2em;
+}
+
+
+.btn, .nav-link, .navbar-brand {
+    font-family: 'Inter', 'Roboto', sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    min-height: 100vh;
+    color: #e0e0e0;
+}
+
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+
+.card {
+    background: rgba(30, 30, 46, 0.95);
+    border-radius: 20px;
+    border: 1px solid rgba(72, 187, 120, 0.2);
+    backdrop-filter: blur(10px);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(72, 187, 120, 0.2);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #2d3748, #1a202c);
+    border-bottom: 2px solid #48bb78;
+    padding: 20px;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+.card-body {
+    padding: 25px;
+}
+
+
+.btn {
+    border-radius: 50px !important;
+    padding: 10px 25px !important;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #48bb78, #2f855a);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #38a169, #276749);
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(72, 187, 120, 0.4);
+}
+
+.btn-success {
+    background: #48bb78;
+}
+
+.btn-success:hover {
+    background: #38a169;
+    transform: translateY(-2px);
+}
+
+.btn-danger {
+    border-radius: 50px;
+}
+
+
+.form-control {
+    background: rgba(45, 55, 72, 0.9);
+    border: 1px solid #4a5568;
+    border-radius: 15px;
+    color: #e0e0e0;
+    padding: 12px 15px;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    background: rgba(45, 55, 72, 1);
+    border-color: #48bb78;
+    box-shadow: 0 0 0 0.2rem rgba(72, 187, 120, 0.25);
+    color: #e0e0e0;
+}
+
+.form-label {
+    color: #48bb78;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+
+.navbar {
+    background: rgba(26, 26, 46, 0.95) !important;
+    backdrop-filter: blur(10px);
+    border-bottom: 2px solid #48bb78;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    color: #48bb78 !important;
+}
+
+.nav-link {
+    color: #e0e0e0 !important;
+    transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+    color: #48bb78 !important;
+}
+
+
+.alert {
+    border-radius: 15px;
+    border-left: 4px solid #48bb78;
+    background: rgba(45, 55, 72, 0.9);
+    color: #e0e0e0;
+}
+
+.alert-success {
+    border-left-color: #48bb78;
+}
+
+
+h1, h2, h3 {
+    color: #48bb78;
+    margin-bottom: 20px;
+}
+
+
+.list-group-item {
+    background: rgba(45, 55, 72, 0.8);
+    border: 1px solid #4a5568;
+    color: #e0e0e0;
+    border-radius: 15px !important;
+    margin-bottom: 10px;
+}
+
+.list-group-item:hover {
+    background: rgba(72, 187, 120, 0.1);
+    border-color: #48bb78;
+}
+
+
+.progress {
+    background: #2d3748;
+    border-radius: 50px;
+    height: 10px;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, #48bb78, #2f855a);
+    border-radius: 50px;
+}
+
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.soft-emoji {
+    opacity: 0.6;
+    filter: grayscale(0.3) brightness(0.9);
+    transition: all 0.2s ease;
+}
+
+/* Можно сделать чуть ярче при наведении */
+.soft-emoji:hover {
+    opacity: 0.8;
+    filter: grayscale(0.1) brightness(1);
+}

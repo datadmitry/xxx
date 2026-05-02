@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Создать класс{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-center mb-0">Создать новый класс</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="class_level" class="form-label">Номер класса</label>
+                            <select name="class_level" id="class_level" class="form-control" required>
+                                <option value="">Выберите номер</option>
+                                {% for i in range(1, 12) %}
+                                    <option value="{{ i }}">{{ i }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="class_letter" class="form-label">Буква класса</label>
+                            <select name="class_letter" id="class_letter" class="form-control" required>
+                                <option value="">Выберите букву</option>
+                                <option value="А">А</option>
+                                <option value="Б">Б</option>
+                                <option value="В">В</option>
+                                <option value="Г">Г</option>
+                                <option value="Д">Д</option>
+                            </select>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Создать класс</button>
+                            <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary">Назад</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

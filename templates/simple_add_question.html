@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Добавление вопроса{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Вопрос #{{ q_num }}</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="question_text" class="form-label">Текст вопроса</label>
+                            <textarea name="question_text" id="question_text" class="form-control" rows="3" required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="correct_answer" class="form-label">Правильный ответ</label>
+                            <input type="text" name="correct_answer" id="correct_answer" class="form-control" required>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" name="add_more" value="yes" class="btn btn-primary">
+                                 Добавить ещё вопрос
+                            </button>
+                            <button type="submit" class="btn btn-success">
+                                 Завершить создание теста
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

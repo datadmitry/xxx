@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{ test.title }}</h1>
+<form method="POST" action="">
+    {{ form.hidden_tag() if form }}
+    {% for question in questions %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Вопрос {{ loop.index }}</h5>
+                <p class="card-text">{{ question.text }}</p>
+                <img src="{{ url_for('static', filename='img/' + question.img) }}" style="width: 500px; height: auto;" alt="">
+                <div class="mb-3">
+                    <label for="question_{{ question.id }}" class="form-label">Ваш ответ:</label>
+                    <input type="text" class="form-control" id="question_{{ question.id }}"
+                           name="question_{{ question.id }}" required>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary">Завершить тест</button>
+</form>
+{% endblock %}

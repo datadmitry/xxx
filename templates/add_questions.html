@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h1>Вопрос {{ q_num }} из {{ total }}</h1>
+        <div class="progress mb-4">
+            <div class="progress-bar" style="width: {{ ((q_num-1)/total * 100) if total > 0 else 0 }}%"></div>
+        </div>
+        <form method="POST" action="" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.question_text.label(class="form-label") }}
+                {{ form.question_text(class="form-control", rows="3") }}
+                {% for error in form.question_text.errors %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="mb-3">
+                {{ form.image.label(class="form-label") }}
+                {{ form.image(class="form-control") }}
+                {% for error in form.image.errors %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="mb-3">
+                {{ form.correct_answer.label(class="form-label") }}
+                {{ form.correct_answer(class="form-control") }}
+                {% for error in form.correct_answer.errors %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+            {{ form.submit(class="btn btn-primary") }}
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Результаты учеников</h1>
+{% if results %}
+    {% for result in results %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <strong>Ученик:</strong> {{ result.student.username }} |
+                <strong>Тест:</strong> {{ result.test.title }} |
+                <strong>Дата:</strong> {{ result.completed_at.strftime('%d.%m.%Y %H:%M') }}
+            </div>
+            <div class="card-body">
+                <p><strong>Результат:</strong> {{ "%.1f"|format(result.score) }}%</p>
+                <p><strong>Оценка:</strong> {{ result.grade }}</p>
+
+                {% if result.wrong_questions %}
+                    <h5>Ошибки:</h5>
+                    <ul>
+                    {% for wrong in result.wrong_questions %}
+                        <li>
+                            <strong>Вопрос:</strong> {{ wrong.question.text }}<br>
+                            <span class="text-danger">Ответ ученика: {{ wrong.answer }}</span><br>
+                            <span class="text-success">Правильный ответ: {{ wrong.question.correct_answer }}</span>
+                        </li>
+                    {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-success">Нет ошибок! Отличный результат!</p>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <p>Пока нет результатов</p>
+{% endif %}
+<a href="{{ url_for('teacher_dashboard') }}" class="btn btn-primary">Назад</a>
+{% endblock %}

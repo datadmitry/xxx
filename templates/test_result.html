@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h1>Результаты теста</h1>
+        <div class="card mt-4">
+            <div class="card-body text-center">
+                <h3>{{ result.test.title }}</h3>
+                <p class="display-4">{{ "%.1f"|format(result.score) }}%</p>
+                <h4>Оценка: {{ result.grade }}</h4>
+
+                {% if result.grade == 5 %}
+                    <div class="alert alert-success">Отлично! Вы великолепно справились!</div>
+                {% elif result.grade == 4 %}
+                    <div class="alert alert-info">Хорошо! Неплохой результат!</div>
+                {% elif result.grade == 3 %}
+                    <div class="alert alert-warning">Удовлетворительно. Стоит повторить материал.</div>
+                {% else %}
+                    <div class="alert alert-danger">Неудовлетворительно. Нужно больше практики!</div>
+                {% endif %}
+
+                <div class="mt-4">
+                    <a href="{{ url_for('student_dashboard') }}" class="btn btn-primary">Вернуться к тестам</a>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="mt-5">Детали ответов:</h3>
+        {% for answer in result.answers %}
+            <div class="card mb-3 {% if answer.is_correct %}border-success{% else %}border-danger{% endif %}">
+                <div class="card-body">
+                    <h5 class="card-title">Вопрос {{ loop.index }}</h5>
+                    <p class="card-text"><strong>Вопрос:</strong> {{ answer.question.text }}</p>
+                    <p><strong>Ваш ответ:</strong>
+                        <span class="{% if answer.is_correct %}text-success{% else %}text-danger{% endif %}">
+                            {{ answer.answer }}
+                        </span>
+                    </p>
+                    {% if not answer.is_correct %}
+                        <p><strong>Правильный ответ:</strong>
+                            <span class="text-success">{{ answer.question.correct_answer }}</span>
+                        </p>
+                    {% endif %}
+                    <div>
+                        {% if answer.is_correct %}
+                            <span class="badge bg-success">✓ Правильно</span>
+                        {% else %}
+                            <span class="badge bg-danger">✗ Неправильно</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+
+        <div class="card mt-4">
+            <div class="card-body">
+                <h4>Статистика:</h4>
+                <ul class="list-group">
+                    {% set correct_count = result.answers|selectattr('is_correct', 'equalto', true)|list|length %}
+                    {% set total_count = result.answers|length %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Правильные ответы:
+                        <span class="badge bg-success rounded-pill">{{ correct_count }} / {{ total_count }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Неправильные ответы:
+                        <span class="badge bg-danger rounded-pill">{{ total_count - correct_count }} / {{ total_count }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Процент правильных:
+                        <span class="badge bg-primary rounded-pill">{{ "%.1f"|format(result.score) }}%</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="text-center mt-4 mb-5">
+            <a href="{{ url_for('student_dashboard') }}" class="btn btn-success">К списку тестов</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

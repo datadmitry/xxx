@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Мои классы{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-center mb-4">Мои классы</h1>
+
+    {% if classes %}
+        <div class="row">
+            {% for class in classes %}
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Класс {{ class.name }}</h5>
+                            <p class="card-text">
+                                Учитель: {{ current_user.username }}<br>
+                                ID класса: {{ class.id }}
+                            </p>
+                            <a href="{{ url_for('class_statistics', class_id=class.id) }}" class="btn btn-primary">Статистика</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center">
+            <h3>У вас пока нет классов</h3>
+            <p>Создайте первый класс, чтобы начать работу</p>
+            <a href="{{ url_for('create_class') }}" class="btn btn-success">Создать класс</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

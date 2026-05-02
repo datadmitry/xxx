@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Студенческая панель{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="text-center mb-4">
+             Добро пожаловать, {{ current_user.username }}!
+        </h1>
+        <p class="text-center">Ваш уровень: <strong>{{ level }}</strong></p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    {% for test in tests %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                     {{ test.title }}
+                </div>
+                <div class="card-body">
+                    <p>Количество вопросов: {{ test.questions|length }}</p>
+                    {% if test.id in completed_test_ids %}
+                        <button class="btn btn-secondary" disabled>
+                             Пройден
+                        </button>
+                    {% else %}
+                        <a href="{{ url_for('take_test', test_id=test.id) }}"
+                           class="btn btn-primary">
+                            ▶ Начать тест
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

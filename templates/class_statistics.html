@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Статистика класса {{ class_obj.name }}{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .stat-card {
+        background: rgba(30, 30, 46, 0.95);
+        border-radius: 20px;
+        padding: 20px;
+        margin-bottom: 30px;
+        border: 1px solid rgba(72, 187, 120, 0.2);
+    }
+
+    .stat-card h3 {
+        color: #48bb78;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #48bb78;
+        padding-bottom: 10px;
+    }
+
+    canvas {
+        max-height: 400px;
+    }
+
+    .table-dark {
+        background: rgba(30, 30, 46, 0.95);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-center mb-4">Статистика класса {{ class_obj.name }}</h1>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="stat-card">
+                <h3>Успеваемость учеников</h3>
+                <canvas id="studentsChart"></canvas>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="stat-card">
+                <h3>Средние баллы по тестам</h3>
+                <canvas id="testsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <h3>Список учеников</h3>
+        <div class="table-responsive">
+            <table class="table table-dark table-hover">
+                <thead>
+                    <tr>
+                        <th>Ученик</th>
+                        <th>Уровень</th>
+                        <th>Пройдено тестов</th>
+                        <th>Средний балл</th>
+                        <th>Оценка</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr>
+                        <td>{{ student.username }}</td>
+                        <td>{{ student.level }}</td>
+                        <td>{{ student.results|length }}</td>
+                        {% set avg_score = student.results|map(attribute='score')|sum / student.results|length if student.results else 0 %}
+                        <td>{{ "%.1f"|format(avg_score) }}%</td>
+                        <td>
+                            {% if avg_score >= 90 %}5
+                            {% elif avg_score >= 70 %}4
+                            {% elif avg_score >= 50 %}3
+                            {% else %}2
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // График успеваемости учеников
+    const studentsCtx = document.getElementById('studentsChart').getContext('2d');
+    new Chart(studentsCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_data.students|tojson }},
+            datasets: [{
+                label: 'Средний балл (%)',
+                data: {{ chart_data.avg_scores|tojson }},
+                backgroundColor: 'rgba(72, 187, 120, 0.6)',
+                borderColor: '#48bb78',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { color: '#e0e0e0' }
+                },
+                x: {
+                    ticks: { color: '#e0e0e0' }
+                }
+            }
+        }
+    });
+
+    // График по тестам
+    const testsCtx = document.getElementById('testsChart').getContext('2d');
+    new Chart(testsCtx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_data.tests|map(attribute='title')|list|tojson }},
+            datasets: [{
+                label: 'Средний балл (%)',
+                data: {{ chart_data.tests|map(attribute='avg_score')|list|tojson }},
+                backgroundColor: 'rgba(72, 187, 120, 0.2)',
+                borderColor: '#48bb78',
+                borderWidth: 3,
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { color: '#e0e0e0' }
+                },
+                x: {
+                    ticks: { color: '#e0e0e0', maxRotation: 45, minRotation: 45 }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Панель учителя{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-center mb-4">Панель учителя</h1>
+
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title"> Создать тест</h5>
+                    <p class="card-text">Создание нового теста с выбором класса</p>
+                    <a href="{{ url_for('create_test') }}" class="btn btn-primary">Создать</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title"> Создать класс</h5>
+                    <p class="card-text">Создайте класс для учеников</p>
+                    <a href="{{ url_for('create_class') }}" class="btn btn-success">Создать</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title"> Мои классы</h5>
+                    <p class="card-text">Просмотр и статистика классов</p>
+                    <a href="{{ url_for('my_classes') }}" class="btn btn-info">Просмотреть</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title"> Результаты учеников</h5>
+                    <p class="card-text">Просмотр результатов тестов</p>
+                    <a href="{{ url_for('teacher_results') }}" class="btn btn-warning">Просмотреть</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

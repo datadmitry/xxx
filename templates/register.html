@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h1>Регистрация</h1>
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+
+            <div class="mb-3">
+                {{ form.username.label(class="form-label") }}
+                {{ form.username(class="form-control") }}
+                {% for error in form.username.errors %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-3">
+                {{ form.password.label(class="form-label") }}
+                {{ form.password(class="form-control") }}
+                {% for error in form.password.errors %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-3">
+                {{ form.confirm_password.label(class="form-label") }}
+                {{ form.confirm_password(class="form-control") }}
+                {% for error in form.confirm_password.errors %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-3">
+                {{ form.role.label(class="form-label") }}
+                {{ form.role(class="form-select") }}
+            </div>
+
+
+            <div id="student-fields" style="display: none;">
+                <div class="mb-3">
+                    <label for="class_level" class="form-label">Номер класса</label>
+                    <select name="class_level" id="class_level" class="form-control">
+                        <option value="">Выберите номер</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="class_letter" class="form-label">Буква класса</label>
+                    <select name="class_letter" id="class_letter" class="form-control">
+                        <option value="">Выберите букву</option>
+                        <option value="А">А</option>
+                        <option value="Б">Б</option>
+                        <option value="В">В</option>
+                        <option value="Г">Г</option>
+                        <option value="Д">Д</option>
+                        <option value="Е">Е</option>
+                    </select>
+                </div>
+            </div>
+
+
+           <div class="mb-3" id="teacher_code_div" style="display: none;">
+                <label for="teacher_code" class="form-label">Код учителя</label>
+                <input type="text" name="teacher_code" id="teacher_code" class="form-control">
+                <small class="text-muted">Введите код учителя (только для регистрации как учитель)</small>
+           </div>
+
+            <div class="mb-3">
+                {{ form.submit(class="btn btn-primary w-100") }}
+            </div>
+        </form>
+        <div class="mt-3 text-center">
+            <p>Уже есть аккаунт? <a href="{{ url_for('login') }}">Войдите</a></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const roleSelect = document.getElementById('role');
+    const teacherCodeDiv = document.getElementById('teacher_code_div');
+    const studentFields = document.getElementById('student-fields');
+
+    function toggleFields() {
+        if (roleSelect.value === 'teacher') {
+            teacherCodeDiv.style.display = 'block';
+            studentFields.style.display = 'none';
+            // Делаем поля для ученика необязательными
+            document.getElementById('class_level').required = false;
+            document.getElementById('class_letter').required = false;
+            // Делаем поле для кода учителя обязательным
+            document.getElementById('teacher_code').required = true;
+        } else if (roleSelect.value === 'student') {
+            teacherCodeDiv.style.display = 'none';
+            studentFields.style.display = 'block';
+            // Делаем поля для ученика обязательными
+            document.getElementById('class_level').required = true;
+            document.getElementById('class_letter').required = true;
+            // Делаем поле для кода учителя необязательным
+            if (document.getElementById('teacher_code')) {
+                document.getElementById('teacher_code').required = false;
+            }
+        } else {
+            teacherCodeDiv.style.display = 'none';
+            studentFields.style.display = 'none';
+            document.getElementById('class_level').required = false;
+            document.getElementById('class_letter').required = false;
+            if (document.getElementById('teacher_code')) {
+                document.getElementById('teacher_code').required = false;
+            }
+        }
+    }
+
+    // Добавляем обработчик события
+    if (roleSelect) {
+        roleSelect.addEventListener('change', toggleFields);
+        // Вызываем функцию при загрузке страницы
+        toggleFields();
+    }
+</script>
+{% endblock %}
