@@ -5,28 +5,7 @@
 {% block extra_css %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-    .stat-card {
-        background: rgba(30, 30, 46, 0.95);
-        border-radius: 20px;
-        padding: 20px;
-        margin-bottom: 30px;
-        border: 1px solid rgba(72, 187, 120, 0.2);
-    }
-
-    .stat-card h3 {
-        color: #48bb78;
-        margin-bottom: 20px;
-        border-bottom: 2px solid #48bb78;
-        padding-bottom: 10px;
-    }
-
-    canvas {
-        max-height: 400px;
-    }
-
-    .table-dark {
-        background: rgba(30, 30, 46, 0.95);
-    }
+    canvas { max-height: 400px; }
 </style>
 {% endblock %}
 
@@ -96,8 +75,8 @@
             datasets: [{
                 label: 'Средний балл (%)',
                 data: {{ chart_data.avg_scores|tojson }},
-                backgroundColor: 'rgba(72, 187, 120, 0.6)',
-                borderColor: '#48bb78',
+                backgroundColor: 'rgba(255, 90, 64, 0.55)',
+                borderColor: '#FF2300',
                 borderWidth: 2
             }]
         },
@@ -125,8 +104,8 @@
             datasets: [{
                 label: 'Средний балл (%)',
                 data: {{ chart_data.tests|map(attribute='avg_score')|list|tojson }},
-                backgroundColor: 'rgba(72, 187, 120, 0.2)',
-                borderColor: '#48bb78',
+                backgroundColor: 'rgba(214, 0, 98, 0.20)',
+                borderColor: '#EB3B8B',
                 borderWidth: 3,
                 tension: 0.3,
                 fill: true

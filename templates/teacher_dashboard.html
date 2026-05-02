@@ -6,6 +6,55 @@
 <div class="container">
     <h1 class="text-center mb-4">Панель учителя</h1>
 
+    <div class="row mb-4">
+        <div class="col-md-8 mx-auto">
+            <form method="GET" class="search-bar">
+                <input type="text" name="q" class="form-control"
+                       placeholder="🔍 Умный поиск тестов и курсов…"
+                       value="{{ query or '' }}">
+                <button type="submit" class="btn btn-primary">Найти</button>
+                {% if query %}
+                    <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary">Сброс</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    {% if query %}
+        <div class="row mb-4">
+            <div class="col-md-10 mx-auto">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Результаты поиска: «{{ query }}»</h3>
+                    </div>
+                    <div class="card-body">
+                        {% if search_results %}
+                            <ul class="list-group">
+                                {% for t in search_results %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <span>
+                                            <strong>{{ t.title }}</strong>
+                                            <small class="text-muted">
+                                                · вопросов: {{ t.questions|length }}
+                                            </small>
+                                        </span>
+                                        {% if t.class_id %}
+                                            <span class="badge-pill-own">отправлен</span>
+                                        {% else %}
+                                            <span class="badge-pill-bank">из базы</span>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-center mb-0">Ничего не найдено.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
     <div class="row">
         <div class="col-md-4 mb-3">
             <div class="card">

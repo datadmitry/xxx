@@ -16,6 +16,9 @@ class User(UserMixin, db.Model):
     class_letter = db.Column(db.String(1), nullable=True)
     teacher_code = db.Column(db.String(50), nullable=True)
 
+    daily_streak = db.Column(db.Integer, default=0)
+    last_daily_date = db.Column(db.Date, nullable=True)
+
     test_results = db.relationship('TestResult', backref='student', lazy=True)
 
 
@@ -51,6 +54,7 @@ class TestResult(db.Model):
     test_id = db.Column(db.Integer, db.ForeignKey('test.id'), nullable=False)
     score = db.Column(db.Float, nullable=False)
     grade = db.Column(db.Integer, nullable=False)
+    duration_seconds = db.Column(db.Integer, default=0)
     completed_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     answers = db.relationship('StudentAnswer', backref='result', lazy=True)

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Ежедневный квиз{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h1 class="text-center mb-4">Ежедневный квиз</h1>
+
+            <div class="text-center mb-4">
+                <span class="streak-pill">
+                    <span class="streak-fire">🔥</span>
+                    <span class="streak-count">{{ streak }}</span>
+                    <span class="streak-label">дней подряд</span>
+                </span>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Вопрос дня</h3>
+                </div>
+                <div class="card-body">
+                    <p class="lead mb-4">{{ question.q }}</p>
+
+                    {% if already_done %}
+                        <div class="alert alert-success text-center">
+                            Вы уже прошли сегодняшний квиз. Возвращайтесь завтра!
+                        </div>
+                    {% else %}
+                        <form method="POST">
+                            <div class="mb-3">
+                                <label for="answer" class="form-label">Ваш ответ</label>
+                                <input type="text" class="form-control" id="answer"
+                                       name="answer" autocomplete="off" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Проверить</button>
+                        </form>
+
+                        {% if feedback and not feedback.correct %}
+                            <div class="alert alert-danger mt-3">
+                                Неверно. Попробуйте ещё раз!
+                            </div>
+                        {% endif %}
+                    {% endif %}
+
+                    <div class="mt-4 text-center">
+                        <a href="{{ url_for('student_dashboard') }}" class="btn btn-secondary-a">
+                            Назад к панели
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

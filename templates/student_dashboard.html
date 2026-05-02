@@ -5,35 +5,93 @@
 {% block content %}
 <div class="row">
     <div class="col-12">
-        <h1 class="text-center mb-4">
-             Добро пожаловать, {{ current_user.username }}!
+        <h1 class="text-center mb-3">
+            Добро пожаловать,
+            <span class="username-with-streak">
+                {{ current_user.username }}
+                {% if streak and streak > 0 %}
+                    <span class="streak-badge" title="Серия ежедневных квизов">
+                        <span class="streak-fire">🔥</span>{{ streak }}
+                    </span>
+                {% endif %}
+            </span>!
         </h1>
         <p class="text-center">Ваш уровень: <strong>{{ level }}</strong></p>
     </div>
 </div>
 
-<div class="row mt-4">
-    {% for test in tests %}
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header">
-                     {{ test.title }}
+<div class="row mt-3 mb-4">
+    <div class="col-md-8 mx-auto">
+        <div class="card daily-card">
+            <div class="card-body d-flex flex-wrap align-items-center justify-content-between">
+                <div>
+                    <h5 class="card-title mb-1">Ежедневный квиз</h5>
+                    <p class="card-text mb-0">
+                        {% if daily_done_today %}
+                            Сегодня уже пройден. Серия:
+                            <strong>{{ streak }} дн.</strong> 🔥
+                        {% else %}
+                            Ответьте на один вопрос и продлите серию.
+                        {% endif %}
+                    </p>
                 </div>
-                <div class="card-body">
-                    <p>Количество вопросов: {{ test.questions|length }}</p>
-                    {% if test.id in completed_test_ids %}
-                        <button class="btn btn-secondary" disabled>
-                             Пройден
-                        </button>
-                    {% else %}
-                        <a href="{{ url_for('take_test', test_id=test.id) }}"
-                           class="btn btn-primary">
-                            ▶ Начать тест
-                        </a>
-                    {% endif %}
-                </div>
+                <a href="{{ url_for('daily_quiz') }}"
+                   class="btn {% if daily_done_today %}btn-secondary-a{% else %}btn-primary{% endif %}">
+                    {% if daily_done_today %}Открыть{% else %}Пройти квиз{% endif %}
+                </a>
             </div>
         </div>
-    {% endfor %}
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-8 mx-auto">
+        <form method="GET" class="search-bar">
+            <input type="text" name="q" class="form-control"
+                   placeholder="🔍 Умный поиск курсов и тестов…"
+                   value="{{ query or '' }}">
+            <button type="submit" class="btn btn-primary">Найти</button>
+            {% if query %}
+                <a href="{{ url_for('student_dashboard') }}" class="btn btn-secondary">Сброс</a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="row mt-4">
+    {% if tests %}
+        {% for test in tests %}
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        {{ test.title }}
+                    </div>
+                    <div class="card-body">
+                        <p>Количество вопросов: {{ test.questions|length }}</p>
+                        {% if test.id in completed_test_ids %}
+                            <button class="btn btn-secondary" disabled>
+                                Пройден
+                            </button>
+                        {% else %}
+                            <a href="{{ url_for('take_test', test_id=test.id) }}"
+                               class="btn btn-primary">
+                                ▶ Начать тест
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                {% if query %}
+                    Ничего не найдено по запросу «{{ query }}».
+                {% else %}
+                    Пока нет доступных тестов. Загляните позже.
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}

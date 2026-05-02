@@ -1,9 +1,12 @@
-from flask import Flask, render_template, redirect, url_for, flash, request, session
+from flask import Flask, render_template, redirect, url_for, flash, request, session, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from models import db, User, Test, Question, TestResult, StudentAnswer, Class
 from forms import RegistrationForm, LoginForm, CreateTestForm, QuestionForm, SendTestForm
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+from datetime import datetime, date, timedelta
+from sqlalchemy import inspect, text
+import random
 import os
 
 app = Flask(__name__)
@@ -105,9 +108,42 @@ def seed_test_bank():
     db.session.commit()
 
 
+def ensure_schema():
+    """Lightweight migration: add new columns if missing (SQLite)."""
+    inspector = inspect(db.engine)
+
+    user_cols = {c['name'] for c in inspector.get_columns('user')}
+    with db.engine.begin() as conn:
+        if 'daily_streak' not in user_cols:
+            conn.execute(text('ALTER TABLE user ADD COLUMN daily_streak INTEGER DEFAULT 0'))
+        if 'last_daily_date' not in user_cols:
+            conn.execute(text('ALTER TABLE user ADD COLUMN last_daily_date DATE'))
+
+    result_cols = {c['name'] for c in inspector.get_columns('test_result')}
+    with db.engine.begin() as conn:
+        if 'duration_seconds' not in result_cols:
+            conn.execute(text('ALTER TABLE test_result ADD COLUMN duration_seconds INTEGER DEFAULT 0'))
+
+
+def format_duration(total_seconds):
+    if not total_seconds or total_seconds < 0:
+        return '0 сек'
+    total_seconds = int(total_seconds)
+    minutes, seconds = divmod(total_seconds, 60)
+    if minutes:
+        return f'{minutes} мин {seconds} сек'
+    return f'{seconds} сек'
+
+
 with app.app_context():
     db.create_all()
+    ensure_schema()
     seed_test_bank()
+
+
+@app.context_processor
+def inject_helpers():
+    return {'format_duration': format_duration}
 
 
 def calculate_grade(percentage):
@@ -158,20 +194,21 @@ def register():
     return render_template('register.html', form=form)
 
 
+def _dashboard_url_for(user):
+    return url_for('student_dashboard') if user.role == 'student' else url_for('teacher_dashboard')
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(_dashboard_url_for(current_user))
 
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if user and check_password_hash(user.password, form.password.data):
-            login_user(user, remember=form.remember_me.data)
-            if user.role == 'student':
-                return redirect(url_for('student_dashboard'))
-            else:
-                return redirect(url_for('teacher_dashboard'))
+            login_user(user)
+            return redirect(_dashboard_url_for(user))
         else:
             flash('Неверный логин или пароль', 'danger')
 
@@ -197,18 +234,29 @@ def student_dashboard():
             letter=current_user.class_letter,
         ).first()
 
+    query = (request.args.get('q') or '').strip()
+
     if student_class:
-        tests = Test.query.filter_by(class_id=student_class.id).all()
+        base_q = Test.query.filter_by(class_id=student_class.id)
+        if query:
+            base_q = base_q.filter(Test.title.ilike(f'%{query}%'))
+        tests = base_q.all()
     else:
         tests = []
 
     completed_tests = TestResult.query.filter_by(student_id=current_user.id).all()
     completed_test_ids = [result.test_id for result in completed_tests]
 
+    today = date.today()
+    daily_done_today = current_user.last_daily_date == today
+
     return render_template('student_dashboard.html',
                            tests=tests,
                            completed_test_ids=completed_test_ids,
-                           level=current_user.level)
+                           level=current_user.level,
+                           query=query,
+                           streak=current_user.daily_streak or 0,
+                           daily_done_today=daily_done_today)
 
 
 @app.route('/teacher_dashboard')
@@ -217,7 +265,20 @@ def teacher_dashboard():
     if current_user.role != 'teacher':
         return redirect(url_for('student_dashboard'))
 
-    return render_template('teacher_dashboard.html')
+    query = (request.args.get('q') or '').strip()
+    search_results = []
+    if query:
+        teacher_class_ids = [c.id for c in Class.query.filter_by(teacher_id=current_user.id).all()]
+        search_results = Test.query.filter(
+            Test.title.ilike(f'%{query}%'),
+            (Test.class_id.is_(None)) |
+            (Test.created_by == current_user.id) |
+            (Test.class_id.in_(teacher_class_ids))
+        ).all()
+
+    return render_template('teacher_dashboard.html',
+                           query=query,
+                           search_results=search_results)
 
 
 @app.route('/add_questions/<int:q_num>', methods=['GET', 'POST'])
@@ -301,16 +362,31 @@ def take_test(test_id):
 
     test = Test.query.get_or_404(test_id)
     questions = test.questions
+    session_key = f'test_start_{test_id}'
+
+    if request.method == 'GET':
+        session[session_key] = datetime.utcnow().isoformat()
 
     if request.method == 'POST':
         score = 0
         total_points = 0
 
+        start_iso = session.pop(session_key, None)
+        if start_iso:
+            try:
+                started_at = datetime.fromisoformat(start_iso)
+                duration = max(0, int((datetime.utcnow() - started_at).total_seconds()))
+            except ValueError:
+                duration = 0
+        else:
+            duration = 0
+
         result = TestResult(
             student_id=current_user.id,
             test_id=test_id,
             score=0,
-            grade=0
+            grade=0,
+            duration_seconds=duration,
         )
         db.session.add(result)
         db.session.commit()
@@ -612,6 +688,69 @@ def test_bank():
         bank_tests=bank_tests,
         own_tests=own_tests,
         classes=teacher_classes,
+    )
+
+
+DAILY_QUIZ_POOL = [
+    {'q': 'Сколько будет 13 + 27?', 'a': '40'},
+    {'q': 'Сколько континентов на Земле?', 'a': '6'},
+    {'q': 'Столица Франции?', 'a': 'Париж'},
+    {'q': 'Самая большая планета Солнечной системы?', 'a': 'Юпитер'},
+    {'q': 'Кто написал "Войну и мир"?', 'a': 'Толстой'},
+    {'q': 'Химический символ воды?', 'a': 'H2O'},
+    {'q': 'Сколько граней у куба?', 'a': '6'},
+    {'q': 'В каком году человек впервые полетел в космос?', 'a': '1961'},
+    {'q': 'Сколько будет 9 в квадрате?', 'a': '81'},
+    {'q': 'Самый длинный материк?', 'a': 'Евразия'},
+    {'q': 'Перевод слова "friend"', 'a': 'друг'},
+    {'q': 'Сколько струн у классической гитары?', 'a': '6'},
+    {'q': 'Кто написал "Евгения Онегина"?', 'a': 'Пушкин'},
+    {'q': 'Сколько минут в часе?', 'a': '60'},
+    {'q': 'Какая часть речи "быстро"?', 'a': 'наречие'},
+]
+
+
+def _daily_question_for(d):
+    return DAILY_QUIZ_POOL[d.toordinal() % len(DAILY_QUIZ_POOL)]
+
+
+@app.route('/daily_quiz', methods=['GET', 'POST'])
+@login_required
+def daily_quiz():
+    if current_user.role != 'student':
+        return redirect(url_for('teacher_dashboard'))
+
+    today = date.today()
+    already_done = current_user.last_daily_date == today
+    question = _daily_question_for(today)
+
+    feedback = None
+    if request.method == 'POST' and not already_done:
+        user_answer = (request.form.get('answer') or '').strip()
+        is_correct = user_answer.lower() == question['a'].lower()
+        if is_correct:
+            yesterday = today - timedelta(days=1)
+            if current_user.last_daily_date == yesterday:
+                current_user.daily_streak = (current_user.daily_streak or 0) + 1
+            else:
+                current_user.daily_streak = 1
+            current_user.last_daily_date = today
+            db.session.commit()
+            flash(f'Верно! Серия: {current_user.daily_streak} дн.', 'success')
+            return redirect(url_for('daily_quiz'))
+        else:
+            feedback = {
+                'correct': False,
+                'answer': user_answer,
+                'right': question['a'],
+            }
+
+    return render_template(
+        'daily_quiz.html',
+        question=question,
+        already_done=already_done,
+        streak=current_user.daily_streak or 0,
+        feedback=feedback,
     )
 
 

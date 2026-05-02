@@ -1,11 +1,189 @@
 {% extends "base.html" %}
 
+{% block title %}Class Journal — образовательная платформа{% endblock %}
+
 {% block content %}
-<div class="text-center">
-    <h1>Добро пожаловать на образовательную платформу!</h1>
-    <div class="mt-5">
-        <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg mx-2">Войти</a>
-        <a href="{{ url_for('register') }}" class="btn btn-success btn-lg mx-2">Зарегистрироваться</a>
+<div class="hero-wrap">
+    <canvas id="heroCanvas" class="hero-canvas"></canvas>
+
+    <div class="hero-content text-center animate">
+        <div class="hero-eyebrow">образовательная платформа нового поколения</div>
+        <h1 class="hero-title">Class Journal</h1>
+        <p class="hero-subtitle">
+            Создавайте тесты, отправляйте классам, отслеживайте успеваемость
+            и поддерживайте интерес учеников ежедневными квизами.
+        </p>
+
+        <div class="mt-4 hero-cta">
+            <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg mx-2">Войти</a>
+            <a href="{{ url_for('register') }}" class="btn btn-secondary-b btn-lg mx-2">Зарегистрироваться</a>
+        </div>
+
+        <div class="hero-features">
+            <div class="hero-feature">
+                <div class="feat-icon">📚</div>
+                <div class="feat-title">База тестов</div>
+                <div class="feat-text">Готовые тесты + создание своих</div>
+            </div>
+            <div class="hero-feature">
+                <div class="feat-icon">🔥</div>
+                <div class="feat-title">Ежедневные квизы</div>
+                <div class="feat-text">Удерживай серию изо дня в день</div>
+            </div>
+            <div class="hero-feature">
+                <div class="feat-icon">📈</div>
+                <div class="feat-title">Аналитика классов</div>
+                <div class="feat-text">Графики и статистика по ученикам</div>
+            </div>
+        </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+(function () {
+    const canvas = document.getElementById('heroCanvas');
+    if (!canvas || typeof THREE === 'undefined') return;
+
+    const palette = [
+        0xFF2300, 0xFF5A40, 0xFF8673,
+        0xFF8100, 0xFFA040, 0xFFBA73,
+        0xD60062, 0xEB3B8B, 0xEB6AA4,
+        0x00BD39, 0x37DE6A, 0x64DE89
+    ];
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 200);
+    camera.position.z = 18;
+
+    const renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        alpha: true,
+        antialias: true
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    function resize() {
+        const w = canvas.clientWidth;
+        const h = canvas.clientHeight;
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+    }
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+    const key = new THREE.DirectionalLight(0xffffff, 0.9);
+    key.position.set(5, 6, 8);
+    scene.add(key);
+    const rim = new THREE.PointLight(0xFF5A40, 1.4, 60);
+    rim.position.set(-8, -4, 6);
+    scene.add(rim);
+
+    function makeBookGeometry() {
+        return new THREE.BoxGeometry(2.4, 1.6, 0.45);
+    }
+
+    function makePencilGeometry() {
+        return new THREE.CylinderGeometry(0.18, 0.18, 3, 16);
+    }
+
+    function makePyramidGeometry() {
+        return new THREE.ConeGeometry(1.0, 1.6, 4);
+    }
+
+    function makeRulerGeometry() {
+        return new THREE.BoxGeometry(3.0, 0.3, 0.08);
+    }
+
+    function makeAtomGeometry() {
+        return new THREE.TorusGeometry(1.0, 0.08, 12, 60);
+    }
+
+    function makeAppleGeometry() {
+        return new THREE.IcosahedronGeometry(0.9, 0);
+    }
+
+    const factories = [
+        makeBookGeometry,
+        makePencilGeometry,
+        makePyramidGeometry,
+        makeRulerGeometry,
+        makeAtomGeometry,
+        makeAppleGeometry
+    ];
+
+    const shapes = [];
+    const SHAPE_COUNT = 22;
+
+    for (let i = 0; i < SHAPE_COUNT; i++) {
+        const factory = factories[i % factories.length];
+        const geom = factory();
+        const color = palette[Math.floor(Math.random() * palette.length)];
+
+        const mat = new THREE.MeshPhongMaterial({
+            color: color,
+            transparent: true,
+            opacity: 0.55,
+            shininess: 80,
+            specular: 0xffffff
+        });
+
+        const mesh = new THREE.Mesh(geom, mat);
+        mesh.position.set(
+            (Math.random() - 0.5) * 28,
+            (Math.random() - 0.5) * 16,
+            (Math.random() - 0.5) * 12 - 4
+        );
+        mesh.rotation.set(
+            Math.random() * Math.PI,
+            Math.random() * Math.PI,
+            Math.random() * Math.PI
+        );
+        const scale = 0.55 + Math.random() * 0.7;
+        mesh.scale.setScalar(scale);
+
+        shapes.push({
+            mesh: mesh,
+            rot: {
+                x: (Math.random() - 0.5) * 0.0035,
+                y: (Math.random() - 0.5) * 0.0045,
+                z: (Math.random() - 0.5) * 0.003
+            },
+            float: {
+                amp: 0.3 + Math.random() * 0.5,
+                speed: 0.0006 + Math.random() * 0.0009,
+                phase: Math.random() * Math.PI * 2,
+                base: mesh.position.y
+            }
+        });
+        scene.add(mesh);
+    }
+
+    let mouseX = 0, mouseY = 0;
+    window.addEventListener('mousemove', function (e) {
+        mouseX = (e.clientX / window.innerWidth - 0.5);
+        mouseY = (e.clientY / window.innerHeight - 0.5);
+    });
+
+    function animate(t) {
+        for (const s of shapes) {
+            s.mesh.rotation.x += s.rot.x;
+            s.mesh.rotation.y += s.rot.y;
+            s.mesh.rotation.z += s.rot.z;
+            s.mesh.position.y = s.float.base + Math.sin(t * s.float.speed + s.float.phase) * s.float.amp;
+        }
+        camera.position.x += (mouseX * 2 - camera.position.x) * 0.03;
+        camera.position.y += (-mouseY * 1.4 - camera.position.y) * 0.03;
+        camera.lookAt(0, 0, 0);
+        renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+    requestAnimationFrame(animate);
+})();
+</script>
 {% endblock %}
