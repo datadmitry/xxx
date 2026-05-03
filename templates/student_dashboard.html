@@ -53,6 +53,27 @@
     </div>
 </div>
 
+{% if on_this_day %}
+<div class="row mb-4">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">На этот день в истории · {{ today.strftime('%d.%m') }}</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text mb-0">
+                    {% if on_this_day.year %}<strong>{{ on_this_day.year }} —</strong>{% endif %}
+                    {{ on_this_day.text }}
+                </p>
+                <p class="text-muted small mt-2 mb-0">
+                    Источник: Wikipedia REST API
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="row mt-4">
     {% if tests %}
         {% for test in tests %}

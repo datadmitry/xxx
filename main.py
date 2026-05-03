@@ -6,6 +6,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime, date, timedelta
 from sqlalchemy import inspect, text, func
+import urllib.request
+import urllib.error
+import urllib.parse
+import json
+import hashlib
+import threading
 import random
 import os
 
@@ -273,13 +279,16 @@ def student_dashboard():
 
     today = date.today()
     daily_done_today = current_user.last_daily_date == today
+    on_this_day = fetch_on_this_day(today)
 
     return render_template('student_dashboard.html',
                            tests=tests,
                            completed_test_ids=completed_test_ids,
                            level=current_user.level,
                            streak=current_user.daily_streak or 0,
-                           daily_done_today=daily_done_today)
+                           daily_done_today=daily_done_today,
+                           on_this_day=on_this_day,
+                           today=today)
 
 
 @app.route('/teacher_dashboard')
@@ -765,27 +774,150 @@ def test_preview(test_id):
     return render_template('test_preview.html', test=test)
 
 
-DAILY_QUIZ_POOL = [
-    {'q': 'Сколько будет 13 + 27?', 'a': '40'},
-    {'q': 'Сколько континентов на Земле?', 'a': '6'},
-    {'q': 'Столица Франции?', 'a': 'Париж'},
-    {'q': 'Самая большая планета Солнечной системы?', 'a': 'Юпитер'},
-    {'q': 'Кто написал "Войну и мир"?', 'a': 'Толстой'},
-    {'q': 'Химический символ воды?', 'a': 'H2O'},
-    {'q': 'Сколько граней у куба?', 'a': '6'},
-    {'q': 'В каком году человек впервые полетел в космос?', 'a': '1961'},
-    {'q': 'Сколько будет 9 в квадрате?', 'a': '81'},
-    {'q': 'Самый длинный материк?', 'a': 'Евразия'},
-    {'q': 'Перевод слова "friend"', 'a': 'друг'},
-    {'q': 'Сколько струн у классической гитары?', 'a': '6'},
-    {'q': 'Кто написал "Евгения Онегина"?', 'a': 'Пушкин'},
-    {'q': 'Сколько минут в часе?', 'a': '60'},
-    {'q': 'Какая часть речи "быстро"?', 'a': 'наречие'},
+# ---------------------------------------------------------------------------
+# External APIs
+# ---------------------------------------------------------------------------
+
+HTTP_USER_AGENT = 'ClassJournal/1.0 (https://github.com/datadmitry/xxx)'
+HTTP_TIMEOUT = 8
+
+_quiz_cache = {}
+_otd_cache = {}
+_countries_cache = {'data': None}
+_api_lock = threading.Lock()
+
+
+def _http_get_json(url):
+    req = urllib.request.Request(url, headers={
+        'User-Agent': HTTP_USER_AGENT,
+        'Accept': 'application/json',
+    })
+    with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as r:
+        raw = r.read().decode('utf-8')
+    return json.loads(raw)
+
+
+def _norm(s):
+    return (s or '').strip().casefold()
+
+
+# --- REST Countries (https://restcountries.com) -----------------------------
+
+DAILY_QUIZ_FALLBACK = [
+    {'q': 'В какой стране столица — Москва?', 'a': ['Россия', 'Российская Федерация']},
+    {'q': 'В какой стране столица — Paris?', 'a': ['Франция']},
+    {'q': 'В какой стране столица — Berlin?', 'a': ['Германия']},
+    {'q': 'В какой стране столица — Madrid?', 'a': ['Испания']},
+    {'q': 'В какой стране столица — Rome?', 'a': ['Италия']},
+    {'q': 'В какой стране столица — Tokyo?', 'a': ['Япония']},
+    {'q': 'В какой стране столица — London?', 'a': ['Великобритания', 'Соединённое Королевство']},
+    {'q': 'В какой стране столица — Beijing?', 'a': ['Китай']},
+    {'q': 'В какой стране столица — Cairo?', 'a': ['Египет']},
+    {'q': 'В какой стране столица — Ottawa?', 'a': ['Канада']},
 ]
 
 
-def _daily_question_for(d):
-    return DAILY_QUIZ_POOL[d.toordinal() % len(DAILY_QUIZ_POOL)]
+def _fetch_countries():
+    """Returns a list of dicts {rus, capital} fetched from REST Countries.
+    Cached for the lifetime of the process."""
+    if _countries_cache['data'] is not None:
+        return _countries_cache['data']
+    try:
+        url = 'https://restcountries.com/v3.1/all?fields=name,capital,translations'
+        data = _http_get_json(url)
+        out = []
+        for c in data:
+            try:
+                rus = (c.get('translations') or {}).get('rus', {}).get('common')
+                rus_official = (c.get('translations') or {}).get('rus', {}).get('official')
+                cap_list = c.get('capital') or []
+                cap = cap_list[0] if cap_list else None
+                if rus and cap:
+                    aliases = [rus]
+                    if rus_official and rus_official not in aliases:
+                        aliases.append(rus_official)
+                    out.append({'rus': rus, 'capital': cap, 'aliases': aliases})
+            except (KeyError, IndexError, TypeError, AttributeError):
+                continue
+        if len(out) >= 30:
+            _countries_cache['data'] = out
+            return out
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError):
+        pass
+    return None
+
+
+def build_daily_quiz(d):
+    """Return a list of 10 quiz questions for date d.
+    Deterministic per day. Falls back to a static list if the API is down."""
+    key = d.isoformat()
+    with _api_lock:
+        if key in _quiz_cache:
+            return _quiz_cache[key]
+
+    countries = _fetch_countries()
+    questions = None
+
+    if countries and len(countries) >= 10:
+        seed = int(hashlib.sha1(key.encode()).hexdigest()[:8], 16)
+        rng = random.Random(seed)
+        picks = rng.sample(countries, 10)
+        questions = [
+            {
+                'q': f'В какой стране столица — {c["capital"]}?',
+                'a': c['aliases'],
+                'src': 'restcountries',
+            }
+            for c in picks
+        ]
+
+    if not questions:
+        questions = list(DAILY_QUIZ_FALLBACK)
+
+    with _api_lock:
+        _quiz_cache[key] = questions
+    return questions
+
+
+# --- Wikipedia "On this day" -------------------------------------------------
+
+def fetch_on_this_day(d):
+    """Pick one historical event for date d from Russian Wikipedia.
+    Returns {'year': str, 'text': str} or None on failure."""
+    key = d.isoformat()
+    with _api_lock:
+        if key in _otd_cache:
+            return _otd_cache[key]
+
+    result = None
+    try:
+        url = (
+            'https://ru.wikipedia.org/api/rest_v1/feed/onthisday/events/'
+            f'{d.month:02d}/{d.day:02d}'
+        )
+        data = _http_get_json(url)
+        events = data.get('events') or []
+        if events:
+            seed = int(hashlib.sha1(key.encode()).hexdigest()[:8], 16)
+            rng = random.Random(seed)
+            ev = rng.choice(events[:60])
+            text_val = (ev.get('text') or '').strip()
+            year = ev.get('year')
+            if text_val:
+                result = {'year': year, 'text': text_val}
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError):
+        result = None
+
+    with _api_lock:
+        _otd_cache[key] = result
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Daily quiz route
+# ---------------------------------------------------------------------------
+
+DAILY_QUIZ_PASS_THRESHOLD = 5  # at least 5/10 correct to extend the streak
 
 
 @app.route('/daily_quiz', methods=['GET', 'POST'])
@@ -795,36 +927,51 @@ def daily_quiz():
         return redirect(url_for('teacher_dashboard'))
 
     today = date.today()
+    questions = build_daily_quiz(today)
     already_done = current_user.last_daily_date == today
-    question = _daily_question_for(today)
 
-    feedback = None
+    submitted = None
     if request.method == 'POST' and not already_done:
-        user_answer = (request.form.get('answer') or '').strip()
-        is_correct = user_answer.lower() == question['a'].lower()
-        if is_correct:
+        breakdown = []
+        correct_count = 0
+        for i, q in enumerate(questions):
+            ua = request.form.get(f'q_{i}', '')
+            ua_norm = _norm(ua)
+            ok = bool(ua_norm) and any(ua_norm == _norm(a) for a in q['a'])
+            if ok:
+                correct_count += 1
+            breakdown.append({
+                'q': q['q'],
+                'user': ua.strip(),
+                'right': q['a'][0],
+                'ok': ok,
+            })
+
+        passed = correct_count >= DAILY_QUIZ_PASS_THRESHOLD
+        if passed:
             yesterday = today - timedelta(days=1)
             if current_user.last_daily_date == yesterday:
                 current_user.daily_streak = (current_user.daily_streak or 0) + 1
             else:
                 current_user.daily_streak = 1
-            current_user.last_daily_date = today
-            db.session.commit()
-            flash(f'Верно! Серия: {current_user.daily_streak} дн.', 'success')
-            return redirect(url_for('daily_quiz'))
-        else:
-            feedback = {
-                'correct': False,
-                'answer': user_answer,
-                'right': question['a'],
-            }
+        current_user.last_daily_date = today
+        db.session.commit()
+
+        submitted = {
+            'correct': correct_count,
+            'total': len(questions),
+            'passed': passed,
+            'breakdown': breakdown,
+            'streak': current_user.daily_streak or 0,
+        }
+        already_done = True
 
     return render_template(
         'daily_quiz.html',
-        question=question,
+        questions=questions,
         already_done=already_done,
         streak=current_user.daily_streak or 0,
-        feedback=feedback,
+        submitted=submitted,
     )
 
 

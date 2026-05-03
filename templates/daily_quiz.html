@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-lg-9">
             <h1 class="text-center mb-4">Ежедневный квиз</h1>
 
             <div class="text-center mb-4">
@@ -15,40 +15,95 @@
                 </span>
             </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h3>Вопрос дня</h3>
-                </div>
-                <div class="card-body">
-                    <p class="lead mb-4">{{ question.q }}</p>
-
-                    {% if already_done %}
-                        <div class="alert alert-success text-center">
-                            Вы уже прошли сегодняшний квиз. Возвращайтесь завтра!
-                        </div>
-                    {% else %}
-                        <form method="POST">
-                            <div class="mb-3">
-                                <label for="answer" class="form-label">Ваш ответ</label>
-                                <input type="text" class="form-control" id="answer"
-                                       name="answer" autocomplete="off" required>
+            {% if submitted %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Результат</h3>
+                    </div>
+                    <div class="card-body text-center">
+                        <p class="display-4 mb-2">{{ submitted.correct }} / {{ submitted.total }}</p>
+                        {% if submitted.passed %}
+                            <div class="alert alert-success">
+                                Серия продлена! Ваша серия: <strong>{{ submitted.streak }} дн.</strong>
                             </div>
-                            <button type="submit" class="btn btn-primary">Проверить</button>
-                        </form>
-
-                        {% if feedback and not feedback.correct %}
-                            <div class="alert alert-danger mt-3">
-                                Неверно. Попробуйте ещё раз!
+                        {% else %}
+                            <div class="alert alert-warning">
+                                Чтобы продлить серию, нужно правильно ответить минимум на половину вопросов.
                             </div>
                         {% endif %}
-                    {% endif %}
-
-                    <div class="mt-4 text-center">
-                        <a href="{{ url_for('student_dashboard') }}" class="btn btn-secondary-a">
-                            Назад к панели
-                        </a>
                     </div>
                 </div>
+
+                <h3 class="mb-3">Разбор ответов</h3>
+                {% for item in submitted.breakdown %}
+                    <div class="card mb-3 {% if item.ok %}border-success{% else %}border-danger{% endif %}">
+                        <div class="card-body">
+                            <h5 class="card-title">Вопрос {{ loop.index }}</h5>
+                            <p class="card-text">{{ item.q }}</p>
+                            <p class="mb-1">
+                                Ваш ответ:
+                                <span class="{% if item.ok %}text-success{% else %}text-danger{% endif %}">
+                                    {{ item.user or '—' }}
+                                </span>
+                            </p>
+                            {% if not item.ok %}
+                                <p class="mb-0">
+                                    Правильный ответ:
+                                    <span class="text-success">{{ item.right }}</span>
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+
+            {% elif already_done %}
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="alert alert-success mb-0">
+                            Вы уже прошли сегодняшний квиз. Возвращайтесь завтра — будут новые
+                            вопросы из стран мира.
+                        </div>
+                    </div>
+                </div>
+
+            {% else %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>10 вопросов из стран мира</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-0">
+                            Вопросы каждый день обновляются автоматически — берутся через
+                            публичный API REST Countries (restcountries.com). Назовите страну,
+                            столицей которой является указанный город.
+                        </p>
+                    </div>
+                </div>
+
+                <form method="POST">
+                    {% for q in questions %}
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">Вопрос {{ loop.index }}</h5>
+                                <p class="card-text">{{ q.q }}</p>
+                                <input type="text"
+                                       class="form-control"
+                                       name="q_{{ loop.index0 }}"
+                                       autocomplete="off"
+                                       placeholder="Ваш ответ">
+                            </div>
+                        </div>
+                    {% endfor %}
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Завершить квиз</button>
+                    </div>
+                </form>
+            {% endif %}
+
+            <div class="mt-4 text-center">
+                <a href="{{ url_for('student_dashboard') }}" class="btn btn-secondary-a">
+                    Назад к панели
+                </a>
             </div>
         </div>
     </div>

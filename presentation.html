@@ -770,15 +770,18 @@ pre .n { color: var(--sec-a-4); }
             </table>
         </div>
         <div class="card">
-            <h3>Сторонние библиотеки и API</h3>
+            <h3>Сторонние API (HTTP) и библиотеки</h3>
             <ul class="clean">
-                <li><b>Three.js</b> — WebGL-сцена с летающими школьными фигурами на главной странице (книги, карандаши, пирамиды, линейки, атомы)</li>
-                <li><b>Chart.js</b> — графики успеваемости и средних баллов на странице статистики класса</li>
-                <li><b>Google Fonts</b> — шрифты Inter, Merriweather, JetBrains Mono</li>
+                <li><b>REST Countries API</b> — каждый день генерируется 10 свежих вопросов «угадай страну по столице» (детерминировано по дате, имя страны на русском)</li>
+                <li><b>Wikipedia REST API</b> — карточка «На этот день в истории» на панели ученика</li>
+                <li><b>Three.js</b> — летающие школьные фигуры на главной</li>
+                <li><b>Chart.js</b> — графики успеваемости класса</li>
+                <li><b>Google Fonts</b> — Inter / Merriweather / JetBrains Mono</li>
                 <li><b>Bootstrap 5 CDN</b> — базовая сетка и компоненты</li>
             </ul>
             <p class="small muted" style="margin-top: 8px;">
-                Все CDN-источники подключаются по HTTPS из шаблонов.
+                HTTP-запросы делаются через <code>urllib</code>, ответы кэшируются
+                по дате и есть локальный fallback на случай недоступности API.
             </p>
         </div>
     </div>
@@ -889,9 +892,11 @@ pre .n { color: var(--sec-a-4); }
         <div class="card">
             <h3>Ежедневный квиз и серия 🔥</h3>
             <p class="muted small">
-                Один вопрос в день, <code>last_daily_date</code> и <code>daily_streak</code>
-                в модели <code>User</code>. Серия растёт, если решено вчера и сегодня;
-                иначе сбрасывается. Огонёк рядом с именем мотивирует возвращаться.
+                10 вопросов из REST Countries API, обновляются каждый день
+                автоматически. Поля <code>last_daily_date</code> и
+                <code>daily_streak</code> в модели <code>User</code>.
+                Серия продлевается, если правильно ≥ 5 из 10. Огонёк рядом с
+                именем мотивирует возвращаться каждый день.
             </p>
         </div>
         <div class="card">
