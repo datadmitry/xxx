@@ -26,8 +26,9 @@
                 <div class="card-body">
                     <h5 class="card-title">Вопрос {{ loop.index }}</h5>
                     <p class="card-text">{{ question.text }}</p>
-                    {% if question.img and question.img != 'NO' %}
-                        <img src="{{ url_for('static', filename='img/' + question.img) }}"
+                    {% set img_url = question_image_url(question.img) %}
+                    {% if img_url %}
+                        <img src="{{ img_url }}"
                              style="width: 480px; max-width: 100%; height: auto; border-radius: 14px;" alt="">
                     {% endif %}
                     <div class="preview-answer mt-3">

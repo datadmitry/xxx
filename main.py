@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, flash, request, session, jsonify
+from flask import Flask, render_template, redirect, url_for, flash, request, session, jsonify, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from models import db, User, Test, Question, TestResult, StudentAnswer, Class
 from forms import RegistrationForm, LoginForm, CreateTestForm, QuestionForm, SendTestForm
@@ -9,11 +9,26 @@ from sqlalchemy import inspect, text, func
 import random
 import os
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'x7K9mP2nQ5rT8wY3zA6cV1bN4mF7jH9kL2cX5zB8nM1qW4eR6tY9uI3oP'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+IS_SERVERLESS = bool(os.environ.get('VERCEL') or os.environ.get('VERCEL_ENV') or os.environ.get('AWS_LAMBDA_FUNCTION_NAME'))
+
+if IS_SERVERLESS:
+    DATA_DIR = '/tmp/classjournal'
+else:
+    DATA_DIR = BASE_DIR
+UPLOAD_DIR = os.path.join(DATA_DIR, 'uploads') if IS_SERVERLESS else os.path.join(BASE_DIR, 'static', 'img')
+
+os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+DEFAULT_DB_URI = 'sqlite:///' + os.path.join(DATA_DIR, 'site.db')
+
+app = Flask(__name__, static_folder=os.path.join(BASE_DIR, 'static'),
+            template_folder=os.path.join(BASE_DIR, 'templates'))
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'x7K9mP2nQ5rT8wY3zA6cV1bN4mF7jH9kL2cX5zB8nM1qW4eR6tY9uI3oP')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', DEFAULT_DB_URI)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = 'static/img/'
+app.config['UPLOAD_FOLDER'] = UPLOAD_DIR
 
 db.init_app(app)
 login_manager = LoginManager(app)
@@ -141,9 +156,23 @@ with app.app_context():
     seed_test_bank()
 
 
+def question_image_url(filename):
+    if not filename or filename == 'NO':
+        return None
+    return url_for('uploaded_file', filename=filename)
+
+
 @app.context_processor
 def inject_helpers():
-    return {'format_duration': format_duration}
+    return {
+        'format_duration': format_duration,
+        'question_image_url': question_image_url,
+    }
+
+
+@app.route('/uploads/<path:filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 
 def calculate_grade(percentage):

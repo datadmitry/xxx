@@ -9,11 +9,6 @@
             Добро пожаловать,
             <span class="username-with-streak">
                 {{ current_user.username }}
-                {% if streak and streak > 0 %}
-                    <span class="streak-badge" title="Серия ежедневных квизов">
-                        <span class="streak-fire streak-fire-static">🔥</span>{{ streak }}
-                    </span>
-                {% endif %}
             </span>!
         </h1>
         <p class="text-center">Ваш уровень: <strong>{{ level }}</strong></p>
